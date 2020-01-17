@@ -7,3 +7,7 @@ class Connecter:
 
     def close(self):
         self._driver.close()
+
+
+if __name__ == '__main__':
+    print("TO be implemented")

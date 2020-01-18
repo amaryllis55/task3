@@ -6,19 +6,15 @@ def create_hotel(tx, name, nation, city):
            name=name, nation=nation, city=city)
 
 
-def create_reviewer(tx, name):
-    tx.run("CREATE (a:Reviewer {name: $name}) ",
-           name=name)
+def create_reviewer(tx, nameReviewer):
+    tx.run("CREATE (a:Reviewer {name: $nameReviewer}) ",
+           nameReviewer=nameReviewer)
 
 
 def add_review(tx, nameHotel, nameReviewer, vote):
-
-
-    tx.run("MATCH (a:Hotel),(b:Reviewer) WHERE a.name = $nameHotel AND b.name = $nameReviewer",
-           "CREATE (a)-[r:REVIEW { vote: $vote }]->(b)",
-           "RETURN type(r), r.name", nameHotel=nameHotel, nameReviewer=nameReviewer, vote=vote)
-
-
+    tx.run("MATCH (a:Hotel { name:$nameHotel }),(b:Reviewer { name: $nameReviewer })",
+           "MERGE (b)-[r:REVIEW { vote: $vote }]->(a)", nameHotel=nameHotel, nameReviewer=nameReviewer,
+           vote=vote)
 
 if __name__ == '__main__':
     driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))

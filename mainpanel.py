@@ -1,27 +1,64 @@
 from neo4j import GraphDatabase
 
 
-def create_hotel(tx, name, nation, city):
-    tx.run("CREATE (a:Hotel {name: $name, city: $city,  nation: $nation}) ",
-           name=name, nation=nation, city=city)
+class Connection:
+    def __init__(self):
+        self._driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
+
+    def getSession(self):
+        return self._driver.session()
+
+    def close(self):
+        self._driver.close()
 
 
-def create_reviewer(tx, nameReviewer):
-    tx.run("CREATE (a:Reviewer {name: $nameReviewer}) ",
-           nameReviewer=nameReviewer)
+class GraphManager:
+    def __init__(self):
+        self.conn = None
+        self.session = None
 
+    def openConnection(self):
+        if self.conn == None:
+            self.conn = Connection()
 
-def add_review(tx, nameHotel, nameReviewer, vote):
-    tx.run("MATCH (a:Hotel { name:$nameHotel }),(b:Reviewer { name: $nameReviewer })",
-           "MERGE (b)-[r:REVIEW { vote: $vote }]->(a)", nameHotel=nameHotel, nameReviewer=nameReviewer,
-           vote=vote)
+    def closeConnection(self):
+        self.conn.close()
+
+    def getSession(self):
+        if self.session == None:
+            self.session = self.conn.getSession()
+
+    def create_hotel(self, name, nation, city):
+        ses = self.conn.getSession()
+        ses.run("CREATE (a:Hotel {name: $name, city: $city,  nation: $nation}) ",
+                name=name, nation=nation, city=city)
+
+    def create_reviewer(self, nameReviewer):
+        ses = self.conn.getSession()
+        ses.run("CREATE (a:Reviewer {name: $nameReviewer}) ",
+                nameReviewer=nameReviewer)
+
+    def add_review(self, nameHotel, nameReviewer, vote):
+        ses = self.conn.getSession()
+        ses.run("MATCH (b:Reviewer { name: $nameReviewer }, (a:Hotel { name:$nameHotel }))",
+                "MERGE (b)-[r:REVIEW { vote: $vote }]->(a)", nameHotel=nameHotel, nameReviewer=nameReviewer,
+                vote=vote)
+
+    def delete_hotel(self, nameHotel):
+        ses = self.conn.getSession()
+        ses.run(" MATCH (n { name: $nameHotel })", "DETACH DELETE n", nameHotel=nameHotel)
+
+    def delete_reviewer(self, nameReviewer):
+        ses = self.conn.getSession()
+        ses.run(" MATCH (n { name: $nameReviewer })", "DETACH DELETE n", nameHotel=nameReviewer)
+
+    def getReviewers(self, hotelName):
+        print("TODO") #restituisce gli id dei reviewers
 
 if __name__ == '__main__':
-    driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
-
-    with driver.session() as tx:
-        tx.write_transaction(create_hotel, "Residenza K", "Italy", "Rome")
-        tx.write_transaction(create_reviewer, "Arthur")
-        tx.add_review(add_review, "ResidenzaK", "Merlin", 4.8)
-
-    driver.close()
+    graph_mg = GraphManager()
+    graph_mg.openConnection()
+    graph_mg.create_hotel("Residenza K", "USA", "Chicago")
+    graph_mg.create_reviewer("John")
+    graph_mg.add_review("Residenza K", "John", 4.8)
+    graph_mg.closeConnection()

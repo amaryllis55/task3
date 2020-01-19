@@ -13,10 +13,12 @@ class Connection:
     def close(self):
         self._driver.close()
 
+
 class DBManager:
     def __init__(self):
         self.conn = None
         self.session = None
+
     def openConnection(self):
         if self.conn == None:
             self.conn = Connection()
@@ -30,9 +32,10 @@ class DBManager:
             self.session = self.conn.getSession()
         return self.session
 
+
 class GraphManager:
     def __init__(self):
-        self.dbm=DBManager()
+        self.dbm = DBManager()
 
     def openConnection(self):
         self.dbm.openConnection()
@@ -43,15 +46,14 @@ class GraphManager:
     def getSession(self):
         return self.dbm.getSession()
 
-
     def create_hotel(self, name, nation="nat", city="rr"):
         ses = self.getSession()
-        ses.run("CREATE (a:Hotel {name: $name, city: $city,  nation: $nation}) ",
-                name=name, nation=nation, city=city)
+        ses.run("MERGE (n:Hotel {name: $nameHotel,  city:$city, nation: $nation}) ", nameHotel=name,
+                city=city,  nation=nation)
 
     def create_reviewer(self, nameReviewer):
         ses = self.getSession()
-        ses.run("CREATE (a:Reviewer {name: $nameReviewer}) ",
+        ses.run("MERGE (a:Reviewer {name: $nameReviewer}) ",
                 nameReviewer=nameReviewer)
 
     def add_review(self, nameHotel, nameReviewer, vote):
@@ -95,14 +97,13 @@ class GraphManager:
 
     def printNations(self):
         ses = self.getSession()
-        if ses==None:
+        if ses == None:
             print("prob")
-        nat=[]
+        nat = []
         for record in ses.run("MATCH (n:Hotel) RETURN distinct n.nation"):
-            print(record["n.nation"]+ "\n")
+            print(record["n.nation"] + "\n")
             nat.append(record["n.nation"])
-        return(nat)
-
+        return (nat)
 
     def printCities(self):
         ses = self.getSession()
@@ -113,66 +114,48 @@ class GraphManager:
         ses = self.getSession()
         for record in ses.run("MATCH (n:Reviewer) RETURN n.name as nameRev"):
             print(record["nameRev"])
+
     def deleteNationHotels(self):
-        while(True):
-            nat=graph_mg.printNations()
+        while (True):
+            nat = graph_mg.printNations()
             choice = input("Select nation to be deleted or enter 'exit' to return to administrator menu: ")
             if choice in nat:
                 ses = self.getSession()
                 ses.run("MATCH (n { nation: $nation }) DETACH DELETE n ", nation=choice)
                 break
-            elif choice=="exit":
+            elif choice == "exit":
                 break
             else:
                 print("Choice not valid.\n")
 
-
     def manageLogin(self):
-        print("ADMIN MENU")
+       # print("ADMIN MENU")
         print("Insert admin password or 'exit' to return to main menu. \n")
         pw = getpass()
-        while(True):
-
-            if pw=="admin":
-                option = ["logout", "delete nation", "delete city", "delete hotel", "delete reviewer",
-                          "delete review", "find user"]
+        while (True):
+            if pw == "admin":
+                option = ["logout","show possible fake reviewers"]
 
                 while (True):
                     chosen = input("Select option or enter 'help' to see command list: ")
                     if chosen == option[0]:  # logout
-                        break
-                    if chosen == option[1]:  # delete nation
-                       graph_mg.deleteNationHotels()
-                    if chosen == option[2]:  # delete city
-                        print("TODO")
-                    if chosen == option[3]:  # delete hotel
-                       print(option[3])
-                    if chosen == option[4]:  # delete reviewer
-                        print(option[4])
-                    if chosen == option[5]:  # delete review
-                        print(option[5])
-                    if chosen == option[6]:  # find user
-                        print(option[6])
-
-                    if chosen == options[1]:  # analitycs
-                        print(options[1])
-                    if chosen == options[2]:  # statistics
-                        print(options[2])
-                    if chosen == options[3]:  # "find hotel"
-                        print(options[3])
-                    if chosen == options[4]:  # "find reviewer"
-                        print(options[4])
-                    if chosen == options[5]:  # "list Nations"
-                        graph_mg.printNations()
-                    if chosen == "help":
-                        for item in option:
-                            print(item)
-                        for item in options:
-                            print(item)
-                    if chosen == "exit":
                         pw="exit"
                         break
-            elif pw=="exit":
+                    if chosen == option[1]:  # show possible fake reviewers
+                        graph_mg.deleteNationHotels()
+                    if chosen == options[1]:
+                        print(options[1])
+                    if chosen == options[2]:
+                        print(options[2])
+                    if chosen == "help":
+                        print(option[0]+" - logout and return to main menu")
+                        print(option[1] + " - show possible fake reviewers")
+                        print(options[1]+" - show most popular hotels")
+                        print(options[2]+" - find all the reviews by a specific reviewer")
+                    if chosen == "exit":
+                        pw = "exit"
+                        break
+            elif pw == "exit":
                 break
             else:
                 print("Input not valid.\n")
@@ -180,17 +163,17 @@ class GraphManager:
                 pw = getpass()
 
 
-
-
 if __name__ == '__main__':
-    options = ["login", "read analytics", "read statistics", "find hotel", "find reviewer", "list nations"]
+    print("MAIN MENU\n")
+    options = ["login", "show most popular hotels", "find reviewer"]
     print("Options:\n")
     for item in options:
         print(item + "\n")
     print("Select an option or enter exit to quit the application (enter 'help' for command explanation).\n")
     graph_mg = GraphManager()
     graph_mg.openConnection()
-    #populateGraph(graph_mg)   uncomment just once to populate graph
+    #populateGraph(graph_mg) #  uncomment just once to populate graph
+
     while (True):
 
         chosen = input("Choice: ")
@@ -198,27 +181,15 @@ if __name__ == '__main__':
         if chosen == options[0]:  # login
             graph_mg.getSession()
             graph_mg.manageLogin()
-            print("MAIN MENU\n")
-        if chosen == options[1]:  # analitycs
+
+        if chosen == options[1]:  # find hotel
             graph_mg.getSession()
-        if chosen == options[2]:  # statistics
+        if chosen == options[2]:  # find reviewer
             graph_mg.getSession()
-        if chosen == options[3]:  # "find hotel"
-            graph_mg.getSession()
-            graph_mg.printHotelNames()
-        if chosen == options[4]:  # "find reviewer"
-            graph_mg.getSession()
-            graph_mg.printReviewers()
-        if chosen == options[5]:  # "list Nations"
-            graph_mg.getSession()
-            graph_mg.printNations()
         if chosen == "help":
             print(options[0] + " - log in the application\n")
-            print(options[1] + " - show available analytics about hotels in specific city or nation\n")
-            print(options[2] + " - show available statistics about hotels in a specific city or nation\n")
-            print(options[3] + " - find hotel in the system\n")
-            print(options[4] + " - find all the reviews by a specific reviewer\n")
-            print(options[5] + " - print all nations in the system\n")
+            print(options[1] + " - show most popular hotels\n")
+            print(options[2] + " - find all the reviews by a specific reviewer\n")
 
         if chosen == "exit":
             break

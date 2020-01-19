@@ -82,8 +82,12 @@ class GraphManager:
 
     def printNations(self):
         ses = self.conn.getSession()
+        nat=[]
         for record in ses.run("MATCH (n:Hotel) RETURN distinct n.nation"):
             print(record["n.nation"]+ "\n")
+            nat.append(record["n.nation"])
+        return(nat)
+
 
     def printCities(self):
         ses = self.conn.getSession()
@@ -94,7 +98,22 @@ class GraphManager:
         ses = self.conn.getSession()
         for record in ses.run("MATCH (n:Reviewer) RETURN n.name as nameRev"):
             print(record["nameRev"])
+    def deleteNationHotels(self):
+        while(True):
+            nat=graph_mg.printNations()
+            choice = input("Select nation to be deleted or enter 'exit' to return to administrator menu: ")
+            if choice in nat:
+                ses = self.conn.getSession()
+                ses.run("MATCH (n { nation: $nation }) DETACH DELETE n ", nation=choice)
+                break
+            elif choice=="exit":
+                break
+            else:
+                print("Choice not valid.\n")
+
+
     def manageLogin(self):
+        print("ADMIN MENU")
         print("Insert admin password or 'exit' to return to main menu. \n")
         pw = getpass()
         while(True):
@@ -108,7 +127,7 @@ class GraphManager:
                     if chosen == option[0]:  # logout
                         break
                     if chosen == option[1]:  # delete nation
-                        print("TODO")
+                        graph_mg.deleteNationHotels()
                     if chosen == option[2]:  # delete city
                         print("TODO")
                     if chosen == option[3]:  # delete hotel
@@ -158,12 +177,13 @@ if __name__ == '__main__':
     graph_mg.openConnection()
     #populateGraph(graph_mg)   uncomment just once to populate graph
     while (True):
+
         chosen = input("Choice: ")
-        # pid = os.fork()
-        # if pid == 0:  # child process
+
         if chosen == options[0]:  # login
             graph_mg.getSession()
             graph_mg.manageLogin()
+            print("MAIN MENU\n")
         if chosen == options[1]:  # analitycs
             graph_mg.getSession()
         if chosen == options[2]:  # statistics
@@ -177,13 +197,13 @@ if __name__ == '__main__':
         if chosen == options[5]:  # "list Nations"
             graph_mg.getSession()
             graph_mg.printNations()
-            if chosen == "help":
-                print(options[0] + " - log in the application\n")
-                print(options[1] + " - show available analytics about hotels in specific city or nation\n")
-                print(options[2] + " - show available statistics about hotels in a specific city or nation\n")
-                print(options[3] + " - find hotel in the system\n")
-                print(options[4] + " - find all the reviews by a specific reviewer\n")
-                print(options[5] + " - print all nations in the system\n")
+        if chosen == "help":
+            print(options[0] + " - log in the application\n")
+            print(options[1] + " - show available analytics about hotels in specific city or nation\n")
+            print(options[2] + " - show available statistics about hotels in a specific city or nation\n")
+            print(options[3] + " - find hotel in the system\n")
+            print(options[4] + " - find all the reviews by a specific reviewer\n")
+            print(options[5] + " - print all nations in the system\n")
 
         if chosen == "exit":
             break

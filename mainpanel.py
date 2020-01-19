@@ -13,12 +13,10 @@ class Connection:
     def close(self):
         self._driver.close()
 
-
-class GraphManager:
+class DBManager:
     def __init__(self):
         self.conn = None
         self.session = None
-
     def openConnection(self):
         if self.conn == None:
             self.conn = Connection()
@@ -30,58 +28,75 @@ class GraphManager:
     def getSession(self):
         if self.session == None:
             self.session = self.conn.getSession()
+        return self.session
+
+class GraphManager:
+    def __init__(self):
+        self.dbm=DBManager()
+
+    def openConnection(self):
+        self.dbm.openConnection()
+
+    def closeConnection(self):
+        self.dbm.closeConnection()
+
+    def getSession(self):
+        return self.dbm.getSession()
+
 
     def create_hotel(self, name, nation="nat", city="rr"):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         ses.run("CREATE (a:Hotel {name: $name, city: $city,  nation: $nation}) ",
                 name=name, nation=nation, city=city)
 
     def create_reviewer(self, nameReviewer):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         ses.run("CREATE (a:Reviewer {name: $nameReviewer}) ",
                 nameReviewer=nameReviewer)
 
     def add_review(self, nameHotel, nameReviewer, vote):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         ses.run(
             "MATCH (a:Reviewer), (b:Hotel) WHERE a.name = $nameReviewer AND b.name = $nameHotel   MERGE (a)-[r:REVIEW]->(b) SET r.vote=$vote",
             nameHotel=nameHotel, nameReviewer=nameReviewer, vote=vote)
 
     def delete_hotel(self, nameHotel):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         ses.run(" MATCH (n { name: $nameHotel }) DETACH DELETE n", nameHotel=nameHotel)
 
     def delete_reviewer(self, nameReviewer):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         ses.run(" MATCH (n { name: $nameReviewer }) DETACH DELETE n", nameReviewer=nameReviewer)
 
     def delete_review(self, nameHotel, nameReviewer):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         ses.run("MATCH (b:Reviewer)-[r]->(a:Hotel) where a.name=$nameHotel and b.name=$nameReviewer DETACH DELETE r",
                 nameReviewer=nameReviewer, nameHotel=nameHotel)
 
     def seeGraph(self):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         pg = ses.run("START n=node(*) MATCH (n)-[r]->(m) RETURN n,r,m")
         print(pg.single()["n"]["name"])
 
     def dropEverything(self):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         ses.run("MATCH (n) DETACH DELETE n")
 
     def printRelationshipHotel(self, nameHotel):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         rec = ses.run("MATCH ()-[r:REVIEW]->(b:Hotel) WHERE b.name = $nameHotel RETURN r.vote", nameHotel=nameHotel)
         for record in rec:
             print(record)
 
     def printHotelNames(self):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         for record in ses.run("MATCH (n:Hotel) RETURN n.name"):
             print(record["n.name"])
 
     def printNations(self):
-        ses = self.conn.getSession()
+        ses = self.getSession()
+        if ses==None:
+            print("prob")
         nat=[]
         for record in ses.run("MATCH (n:Hotel) RETURN distinct n.nation"):
             print(record["n.nation"]+ "\n")
@@ -90,12 +105,12 @@ class GraphManager:
 
 
     def printCities(self):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         for record in ses.run("MATCH (n:Hotel) RETURN distinct n.city"):
             print(record["n.city"] + "\n")
 
     def printReviewers(self):
-        ses = self.conn.getSession()
+        ses = self.getSession()
         for record in ses.run("MATCH (n:Reviewer) RETURN n.name as nameRev"):
             print(record["nameRev"])
     def deleteNationHotels(self):
@@ -103,7 +118,7 @@ class GraphManager:
             nat=graph_mg.printNations()
             choice = input("Select nation to be deleted or enter 'exit' to return to administrator menu: ")
             if choice in nat:
-                ses = self.conn.getSession()
+                ses = self.getSession()
                 ses.run("MATCH (n { nation: $nation }) DETACH DELETE n ", nation=choice)
                 break
             elif choice=="exit":
@@ -127,11 +142,11 @@ class GraphManager:
                     if chosen == option[0]:  # logout
                         break
                     if chosen == option[1]:  # delete nation
-                        graph_mg.deleteNationHotels()
+                       graph_mg.deleteNationHotels()
                     if chosen == option[2]:  # delete city
                         print("TODO")
                     if chosen == option[3]:  # delete hotel
-                        print(option[3])
+                       print(option[3])
                     if chosen == option[4]:  # delete reviewer
                         print(option[4])
                     if chosen == option[5]:  # delete review

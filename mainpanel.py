@@ -3,6 +3,41 @@ from test import populateGraph
 from getpass import getpass
 
 
+def manageLogin(graph_mg, options):
+    # print("ADMIN MENU")
+    print("Insert admin password or 'exit' to return to main menu. \n")
+    pw = getpass()
+    while (True):
+        if pw == "admin":
+            option = ["logout", "fake reviewers"]
+
+            while (True):
+                chosen = input("Select option or enter 'help' to see command list: \n")
+                if chosen == option[0]:  # logout
+                    pw = "exit"
+                    break
+                if chosen == option[1]:  # show possible fake reviewers
+                    graph_mg.deleteNationHotels()
+                if chosen == options[1]:
+                    print(options[1])
+                if chosen == options[2]:
+                    print(options[2])
+                if chosen == "help":
+                    print(option[0] + " - logout and return to main menu")
+                    print(option[1] + " - show possible fake reviewers")
+                    print(options[1] + " - show most popular hotels")
+                    print(options[2] + " - find all the reviews by a specific reviewer\n")
+                if chosen == "exit":
+                    pw = "exit"
+                    break
+        elif pw == "exit":
+            break
+        else:
+            print("Input not valid.\n")
+            print("Insert admin password or 'exit' to return to main menu. \n")
+            pw = getpass()
+
+
 class Connection:
     def __init__(self):
         self._driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "amalia"))
@@ -36,7 +71,6 @@ class DBManager:
 class GraphManager:
     def __init__(self):
         self.dbm = DBManager()
-
     def openConnection(self):
         self.dbm.openConnection()
 
@@ -46,10 +80,14 @@ class GraphManager:
     def getSession(self):
         return self.dbm.getSession()
 
-    def create_hotel(self, name, nation="nat", city="rr"):
+    def getReviewerNames(self):
+        self.getSession()
+        return self.getSession().run("MATCH (n:Reviewer) return distinct n.name")
+
+    def create_hotel(self, name, nation, city):
         ses = self.getSession()
         ses.run("MERGE (n:Hotel {name: $nameHotel,  city:$city, nation: $nation}) ", nameHotel=name,
-                city=city,  nation=nation)
+                city=city, nation=nation)
 
     def create_reviewer(self, nameReviewer):
         ses = self.getSession()
@@ -127,52 +165,24 @@ class GraphManager:
                 break
             else:
                 print("Choice not valid.\n")
+    def popular_hotels(self):
+        ses = self.getSession()
+        print(ses.run("CALL algo.degree.stream(Hotel, REVIEW, {direction: incoming}) YIELD nodeId, score RETURN algo.asNode(nodeId).id AS name, score AS followers ORDER BY followers DESC"))
 
-    def manageLogin(self):
-       # print("ADMIN MENU")
-        print("Insert admin password or 'exit' to return to main menu. \n")
-        pw = getpass()
-        while (True):
-            if pw == "admin":
-                option = ["logout","show possible fake reviewers"]
 
-                while (True):
-                    chosen = input("Select option or enter 'help' to see command list: ")
-                    if chosen == option[0]:  # logout
-                        pw="exit"
-                        break
-                    if chosen == option[1]:  # show possible fake reviewers
-                        graph_mg.deleteNationHotels()
-                    if chosen == options[1]:
-                        print(options[1])
-                    if chosen == options[2]:
-                        print(options[2])
-                    if chosen == "help":
-                        print(option[0]+" - logout and return to main menu")
-                        print(option[1] + " - show possible fake reviewers")
-                        print(options[1]+" - show most popular hotels")
-                        print(options[2]+" - find all the reviews by a specific reviewer")
-                    if chosen == "exit":
-                        pw = "exit"
-                        break
-            elif pw == "exit":
-                break
-            else:
-                print("Input not valid.\n")
-                print("Insert admin password or 'exit' to return to main menu. \n")
-                pw = getpass()
+
 
 
 if __name__ == '__main__':
     print("MAIN MENU\n")
-    options = ["login", "show most popular hotels", "find reviewer"]
+    options = ["login", "popular hotels", "find reviewer"]
     print("Options:\n")
     for item in options:
         print(item + "\n")
     print("Select an option or enter exit to quit the application (enter 'help' for command explanation).\n")
     graph_mg = GraphManager()
     graph_mg.openConnection()
-    #populateGraph(graph_mg) #  uncomment just once to populate graph
+    # populateGraph(graph_mg) #  uncomment just once to populate graph
 
     while (True):
 
@@ -180,12 +190,13 @@ if __name__ == '__main__':
 
         if chosen == options[0]:  # login
             graph_mg.getSession()
-            graph_mg.manageLogin()
+            manageLogin(graph_mg, options)
 
         if chosen == options[1]:  # find hotel
             graph_mg.getSession()
         if chosen == options[2]:  # find reviewer
             graph_mg.getSession()
+
         if chosen == "help":
             print(options[0] + " - log in the application\n")
             print(options[1] + " - show most popular hotels\n")
@@ -196,3 +207,4 @@ if __name__ == '__main__':
         print("Select an option or enter exit to quit the application (enter 'help' for command explanation).\n")
     if graph_mg != None:
         graph_mg.closeConnection()
+

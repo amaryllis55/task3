@@ -152,7 +152,7 @@ class GraphManager:
     def printReviewers(self):
         ses = self.getSession()
         result = []
-        for item in ses.run("MATCH (n:Reviewer) RETURN n.name as nameRev"):
+        for item in ses.run("MATCH (n:Reviewer) RETURN DISTINCT n.name"):
             result.append(item["nameRev"])
         return result
 

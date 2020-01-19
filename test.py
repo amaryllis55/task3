@@ -204,7 +204,7 @@ def populateGraph(graph_mg):
     graph_mg.openConnection()
     graph_mg.getSession()
     hotels=[]
-    cities=["Naples", "Cincinnati", "Tucson"]
+    cities=["Naples", "Ketrenid", "Lawendor"]
     nations=["USA", "Italy"]
     for i in range(5):
         hotels.append("H"+str(i))

@@ -17,11 +17,11 @@ def manageLogin(graph_mg, options):
                     pw = "exit"
                     break
                 if chosen == option[1]:  # show possible fake reviewers
-                    graph_mg.deleteNationHotels()
+                    print(option[1])
                 if chosen == options[1]:
-                    print(options[1])
+                    graph_mg.popular_hotels()
                 if chosen == options[2]:
-                    print(options[2])
+                    graph_mg.reccomandRev()
                 if chosen == "help":
                     print(option[0] + " - logout and return to main menu")
                     print(option[1] + " - show possible fake reviewers")
@@ -71,6 +71,7 @@ class DBManager:
 class GraphManager:
     def __init__(self):
         self.dbm = DBManager()
+
     def openConnection(self):
         self.dbm.openConnection()
 
@@ -150,8 +151,10 @@ class GraphManager:
 
     def printReviewers(self):
         ses = self.getSession()
-        for record in ses.run("MATCH (n:Reviewer) RETURN n.name as nameRev"):
-            print(record["nameRev"])
+        result = []
+        for item in ses.run("MATCH (n:Reviewer) RETURN n.name as nameRev"):
+            result.append(item["nameRev"])
+        return result
 
     def deleteNationHotels(self):
         while (True):
@@ -165,12 +168,37 @@ class GraphManager:
                 break
             else:
                 print("Choice not valid.\n")
+
+    def reccomandRev(self):
+        ses = self.getSession()
+        choice = input(
+            "Enter reviewer's name, 'list reviewers' to see all the reviewers in the system or exit to return to administrator menu: ")
+        lista = self.printReviewers()
+        while (True):
+            if choice in list:
+                print(
+                    ses.run(
+                        "MATCH (me:Reviewer)-[myReview:REVIEW]->(h:Hotel)<-[sameHotelReview:REVIEW]-otherPerson:Reviewer)-[otherReview:Review]->(otherHotel:Hotel) "
+                        "WHERE me.name = $nameRev AND myReview.vote > 7AND sameHotelReview.vote > 7   AND otherReview.vote > 7 AND me != otherReview AND otherHotel != h RETURN otherHotel",
+                        nameRev=choice))
+
+                break
+            elif choice == "list reviewers":
+                for item in lista:
+                    print(item)
+            elif choice == "exit":
+                break
+            else:
+                print("Input not valid.\n")
+                choice = input(
+                    "Enter reviewer's name, 'list reviewers' to see all the reviewers in the system or exit to return to administrator menu: ")
+
+        # print(ses.run("CALL algo.degree.stream(Hotel, REVIEW, {direction: incoming}) YIELD nodeId, score RETURN algo.asNode(nodeId).id AS name, score AS followers ORDER BY followers DESC"))
+
     def popular_hotels(self):
         ses = self.getSession()
-        print(ses.run("CALL algo.degree.stream(Hotel, REVIEW, {direction: incoming}) YIELD nodeId, score RETURN algo.asNode(nodeId).id AS name, score AS followers ORDER BY followers DESC"))
-
-
-
+        print(ses.run(
+            "CALL algo.degree.stream(Hotel, REVIEW, {direction: incoming}) YIELD nodeId, score RETURN algo.asNode(nodeId).id AS name, score AS followers ORDER BY followers DESC"))
 
 
 if __name__ == '__main__':
@@ -185,26 +213,22 @@ if __name__ == '__main__':
     # populateGraph(graph_mg) #  uncomment just once to populate graph
 
     while (True):
-
         chosen = input("Choice: ")
-
         if chosen == options[0]:  # login
             graph_mg.getSession()
             manageLogin(graph_mg, options)
-
-        if chosen == options[1]:  # find hotel
+        if chosen == options[1]:  # popular hotels
             graph_mg.getSession()
+            graph_mg.popular_hotels()
         if chosen == options[2]:  # find reviewer
             graph_mg.getSession()
-
+            graph_mg.reccomandRev()
         if chosen == "help":
             print(options[0] + " - log in the application\n")
             print(options[1] + " - show most popular hotels\n")
-            print(options[2] + " - find all the reviews by a specific reviewer\n")
-
+            print(options[2] + " - find reccomended hotel for specific reviewer\n")
         if chosen == "exit":
             break
         print("Select an option or enter exit to quit the application (enter 'help' for command explanation).\n")
     if graph_mg != None:
         graph_mg.closeConnection()
-

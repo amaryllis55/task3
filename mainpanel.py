@@ -194,8 +194,10 @@ class GraphManager:
 
     def popular_hotels(self):
         ses = self.getSession()
-        print(ses.run(
-            "CALL algo.degree.stream(NULL, NULL, {direction: incoming}) YIELD nodeId, score RETURN algo.asNode(nodeId).id AS name, score AS followers ORDER BY followers DESC"))
+        result=ses.run(
+            "CALL algo.degree.stream(NULL, NULL, {direction: incoming}) YIELD nodeId, score RETURN algo.asNode(nodeId).id AS name, score AS followers ORDER BY followers DESC")
+        for item in result:
+            print(item)
 
 
 if __name__ == '__main__':

@@ -176,11 +176,9 @@ class GraphManager:
         lista = self.printReviewers()
         while (True):
             if choice in list:
-                print(
-                    ses.run(
-                        "MATCH (me:Reviewer)-[myReview:REVIEW]->(h:Hotel)<-[sameHotelReview:REVIEW]-(otherPerson:Reviewer)-[otherReview:REVIEW]->(otherHotel:Hotel) "
-        "WHERE me.name = $nameRev AND myReview.vote > 7 AND sameHotelReview.vote > 7   AND otherReview.vote > 7 AND me <> otherReview AND otherHotel <> h RETURN otherHotel",
-                        nameRev=choice))
+                print(ses.run("MATCH (me:Reviewer)-[myReview:REVIEW]->(h:Hotel)<-[sameHotelReview:REVIEW]-(otherPerson:Reviewer)-[otherReview:REVIEW]->(otherHotel:Hotel) "
+        "WHERE me.name = $nameRev AND toFloat(myReview.vote) > 7 AND toFloat(sameHotelReview.vote) > 7   AND toFloat(otherReview.vote) > 7 AND me <> otherReview AND otherHotel <> h RETURN distinct otherHotel", nameRev=choice)
+                )
 
                 break
             elif choice == "list reviewers":
@@ -193,7 +191,6 @@ class GraphManager:
                 choice = input(
                     "Enter reviewer's name, 'list reviewers' to see all the reviewers in the system or exit to return to administrator menu: ")
 
-        # print(ses.run("CALL algo.degree.stream(Hotel, REVIEW, {direction: incoming}) YIELD nodeId, score RETURN algo.asNode(nodeId).id AS name, score AS followers ORDER BY followers DESC"))
 
     def popular_hotels(self):
         ses = self.getSession()

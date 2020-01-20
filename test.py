@@ -216,20 +216,8 @@ def populateGraph(graph_mg):
     for reviewer in reviewers:
         graph_mg.create_reviewer(reviewer)
     ses=graph_mg.getSession()
-    for record in ses.run("MATCH (n:Reviewer) RETURN n.name"):
-        print(record["n.name"])
-    graph_mg.add_review("H3", "Nome2", 8)
-    graph_mg.add_review("H3", "Nome3", 9)
-    graph_mg.add_review("H2", "Nome3", 8)
-    graph_mg.add_review("H1", "Nome3", 7)
-    graph_mg.add_review("H4", "Nome3", 9)
 
-    result=ses.run(
-        "MATCH (me:Reviewer)-[myReview:REVIEW]->(h:Hotel)<-[sameHotelReview:REVIEW]-(otherPerson:Reviewer)-[otherReview:REVIEW]->(otherHotel:Hotel) "
-        "WHERE me.name = $nameRev AND myReview.vote > 7 AND sameHotelReview.vote > 7   AND otherReview.vote > 7 AND me <> otherReview AND otherHotel <> h RETURN otherHotel",
-        nameRev="Nome2")
-    for item in result:
-        print(item)
+
     graph_mg.dropEverything()
     graph_mg.closeConnection()
 

@@ -89,50 +89,61 @@ class GraphManager:
         ses = self.getSession()
         ses.run("MERGE (n:Hotel {name: $nameHotel,  city:$city, nation: $nation}) ", nameHotel=name,
                 city=city, nation=nation)
+        ses.close()
+
 
     def create_reviewer(self, nameReviewer):
         ses = self.getSession()
         ses.run("MERGE (a:Reviewer {name: $nameReviewer}) ",
                 nameReviewer=nameReviewer)
+        ses.close()
 
     def add_review(self, nameHotel, nameReviewer, vote):
         ses = self.getSession()
         ses.run(
             "MATCH (a:Reviewer), (b:Hotel) WHERE a.name = $nameReviewer AND b.name = $nameHotel   MERGE (a)-[r:REVIEW]->(b) SET r.vote=$vote",
             nameHotel=nameHotel, nameReviewer=nameReviewer, vote=vote)
+        ses.close()
 
     def delete_hotel(self, nameHotel):
         ses = self.getSession()
         ses.run(" MATCH (n { name: $nameHotel }) DETACH DELETE n", nameHotel=nameHotel)
+        ses.close()
 
     def delete_reviewer(self, nameReviewer):
         ses = self.getSession()
         ses.run(" MATCH (n { name: $nameReviewer }) DETACH DELETE n", nameReviewer=nameReviewer)
+        ses.close()
 
     def delete_review(self, nameHotel, nameReviewer):
         ses = self.getSession()
         ses.run("MATCH (b:Reviewer)-[r]->(a:Hotel) where a.name=$nameHotel and b.name=$nameReviewer DETACH DELETE r",
                 nameReviewer=nameReviewer, nameHotel=nameHotel)
+        ses.close()
 
     def seeGraph(self):
         ses = self.getSession()
         pg = ses.run("START n=node(*) MATCH (n)-[r]->(m) RETURN n,r,m")
         print(pg.single()["n"]["name"])
+        ses.close()
 
     def dropEverything(self):
         ses = self.getSession()
         ses.run("MATCH (n) DETACH DELETE n")
+        ses.close()
 
     def printRelationshipHotel(self, nameHotel):
         ses = self.getSession()
         rec = ses.run("MATCH ()-[r:REVIEW]->(b:Hotel) WHERE b.name = $nameHotel RETURN r.vote", nameHotel=nameHotel)
         for record in rec:
             print(record)
+        ses.close()
 
     def printHotelNames(self):
         ses = self.getSession()
         for record in ses.run("MATCH (n:Hotel) RETURN n.name"):
             print(record["n.name"])
+        ses.close()
 
     def printNations(self):
         ses = self.getSession()
@@ -142,18 +153,21 @@ class GraphManager:
         for record in ses.run("MATCH (n:Hotel) RETURN distinct n.nation"):
             print(record["n.nation"] + "\n")
             nat.append(record["n.nation"])
+        ses.close()            
         return (nat)
 
     def printCities(self):
         ses = self.getSession()
         for record in ses.run("MATCH (n:Hotel) RETURN distinct n.city"):
             print(record["n.city"] + "\n")
+        ses.close()
 
     def printReviewers(self):
         ses = self.getSession()
         result = []
         for item in ses.run("MATCH (n:Reviewer) RETURN DISTINCT n.name"):
             result.append(item["nameRev"])
+        ses.close()        
         return result
 
     def deleteNationHotels(self):
@@ -163,6 +177,7 @@ class GraphManager:
             if choice in nat:
                 ses = self.getSession()
                 ses.run("MATCH (n { nation: $nation }) DETACH DELETE n ", nation=choice)
+                ses.close()        
                 break
             elif choice == "exit":
                 break
